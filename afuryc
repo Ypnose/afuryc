@@ -1,6 +1,6 @@
 #!/bin/bash
 #   Script by Ypnose  <linuxien[AT]legtux[DOT]org>
-#   Inspired by afur-makepkg by Tuxce
+#   Inspired by afur-makepkg wrote by Tuxce
 #
 #   Upload packages on Archlinux.fr private FTP
 #
@@ -22,9 +22,17 @@
 
 SOFT="afuryc"
 VERS="1.0"
+COMPILE=0
+CLEAN=0
+UPLFTP=0
 
 usage () {
-	echo foo
+	echo -e "usage:  $SOFT <options>\n"
+	echo "  options:"
+	echo "    -c        Create packages without upload"
+	echo "    -d        Clean existing src/ and pkg/ directories"
+	echo -e "    -u        Only upload packages to FTP\n"
+	echo -e "$SOFT compiles packages and upload them to Archlinux.fr FTP.\n"
 }
 
 checkconf () {
@@ -38,21 +46,82 @@ checkconf () {
 
 build () {
 	makepkg
+	makepkg --source
+	
 }
 
 cleanbuild () {
-	echo "Deleting existing src/ and pkg/ folder!"
-	rm -ri src pkg
+	if [[ -d "src" || -d "pkg" ]]; then
+	while true; do
+		read -p "Do you want to delete src/ & pkg/ folders ? [Y/n] " ask
+		case $ask in
+			[Yy])
+			echo "Deleting existing src/ and pkg/ folder!"
+			rm -r src pkg
+			break
+				;;
+			[Nn])
+			break
+				;;
+			*)
+			echo "Please answer yes or no!"
+				;;
+		esac
+	done
+	else
+		echo "Nothing to do!"
+	fi
 }
 
 upload () {
 	man curl
 }
 
-if [[ "$1" = "-h" ]]; then
+if [[ "$1" = "-h" || "$1" = "-help" ]]; then
 	usage
 	exit 1
 fi
 
-checkconf
-exit
+while getopts ":cdu" opt; do
+	case $opt in 
+		c)
+		  UPLFTP=0
+		   ;;
+		d)
+		  CLEAN=1
+		   ;;
+		u)
+		  COMPILE=0
+		   ;;
+		:)
+		  echo NEEDARG
+		  exit 1
+		   ;;
+		?)
+		  echo "$SOFT: This option is invalid '-$OPTARG'"
+		  exit 1
+		   ;;
+	esac
+done
+
+if (( COMPILE )); then
+	build
+fi
+
+if (( CLEAN )); then
+	cleanbuild
+fi
+
+if (( UPLFTP )); then
+	echo "The following packages will be uploaded"
+	upload
+	echo "Uploading packages..."
+fi
+
+
+
+
+
+
+
+
