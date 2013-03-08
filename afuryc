@@ -2,9 +2,9 @@
 #   Script by Ypnose  <linuxien[AT]legtux[DOT]org>
 #   Inspired by afur-makepkg wrote by Tuxce
 #
-#   Upload packages on Archlinux.fr private FTP
+#   Upload packages on Archlinux.fr private FTP.
 #   This script is POSIX compliant, it should work with every shells.
-#   It just needs curl
+#   It just needs curl and makepkg, nothing more.
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -30,14 +30,21 @@ CLEAN=0
 
 usage () {
 	printf "usage:  %s <options>\n" "$SOFT"
-	printf "  options:\n"
-	printf "    -c        Create packages without upload\n"
-	printf "    -d        Clean existing src/ and pkg/ directories\n"
-	printf "    -e        Edit PKGBUILD\n"
-	printf "    -h        Show help\n"
-	printf "    -r        Edit config file\n"
-	printf "    -u        Only upload packages to FTP\n"
+	printf "%s\n"  "options:"
+	printf "%s\n" "    -c        Create packages without upload"
+	printf "%s\n" "    -d        Clean existing src/ and pkg/ directories"
+	printf "%s\n" "    -e        Edit PKGBUILD"
+	printf "%s\n" "    -h        Show help"
+	printf "%s\n" "    -r        Edit config file"
+	printf "%s\n" "    -u        Only upload packages to FTP"
 	printf "%s compiles packages and upload them to Archlinux.fr FTP.\n\n" "$SOFT"
+}
+
+filechk () {
+	if [ ! -r "$HOME/.afuryc.conf" ] && [ ! -r "$HOME/.config/afuryc.conf" ]; then
+		printf "%s\n%s\n" "Config file not found. You should create a config file." "Exiting"
+		exit 1
+	fi
 }
 
 checkconf () {
@@ -47,39 +54,40 @@ checkconf () {
 	if [ -r "$HOME/.config/afuryc.conf" ]; then
 		. $HOME/.config/afuryc.conf
 	fi
-	if [ ! -r "$HOME/.afuryc.conf" ] && [ ! -r "$HOME/.config/afuryc.conf" ]; then
-		printf "Config file not found. You should create a config file.\nExiting\n"
-		exit 1
-	fi
+	filechk
 }
 
 changeconf () {
-	if [ ! -r "$HOME/.afuryc.conf" ] && [ ! -r "$HOME/.config/afuryc.conf" ]; then
-		printf "Config file not found. You should create a config file.\nExiting\n"
+	if [ -z "$EDITOR" ]; then
+		printf "%s\n" '$EDITOR is not defined'
 		exit 1
 	fi
+	filechk
 	if [ -r "$HOME/.afuryc.conf" ]; then
 		$EDITOR $HOME/.afuryc.conf
 	fi
 	if [ -r "$HOME/.config/afuryc.conf" ];then
 		$EDITOR $HOME/.config/afuryc.conf
 	fi
-	printf "Configs modified!\nDone\n"
+	printf "%s\n" "Configs modified!"
 }
 
 build () {
-	makepkg
 	makepkg --source
+	#for file in find $PWD -type f -name "*src.tar.gz"
+		#do
+			#mv file >> 
+	#done
 }
 
 cleanbuild () {
 	if [ -d "src" ] || [ -d "pkg" ]; then
 	while true; do
-		printf "Do you want to delete src/ & pkg/ folders? [Y/n] "
+		printf "%s\n" "Do you want to delete src/ & pkg/ folders? [Y/n] "
 		read ask
 		case $ask in
 			[Yy])
-			  printf "Deleting existing src/ and pkg/ folder!\n"
+			  printf "%s\n" "Deleting existing src/ and pkg/ folder!"
 			  rm -r src pkg
 			  break
 			  ;;
@@ -87,12 +95,12 @@ cleanbuild () {
 			  break
 			  ;;
 			*)
-			  printf "Please answer yes or no!\n"
+			  printf "%s\n" "Please answer yes or no!"
 			  ;;
 		esac
 	done
 	else
-		printf "The directories are missing!\n"
+		printf "%s\n" "The directories are missing!"
 	fi
 }
 
@@ -100,27 +108,28 @@ edit () {
 	if [ -n "$EDITOR" ]; then
 		if [ -r "PKGBUILD" ]; then
 			$EDITOR PKGBUILD
-			printf "Edit finished\n"
+			printf "%s\n" "Edit finished."
 		else
-			printf "PKGBUILD doesn't exist\n"
+			printf "%s\n" "PKGBUILD doesn't exist"
 		fi
 	else
-		printf '$EDITOR is not defined\n'
+		printf "%s\n" '$EDITOR is not defined'
 	fi
 }
 
 upload () {
 	checkconf
-	printf "The following packages will be uploaded\n"
-	#for pkg in ""
-		#do
-			#echo
-	#done
-	printf "Uploading packages...\n"
-		#for pkg in ""
-		#do
-			#curl -u "$USERF":"$PASSF" -T "$pkg" "$FTPURL"
-	#done
+	printf "\n%s\n" "The following packages will be uploaded:"
+	for pkg in $(find $PWD -type f -name "*src.tar.gz")
+		do
+			printf "\e[0;32m%s\e[0m\n" "    $src"
+	done
+	printf "\n%s\n" "Uploading packages in 5 seconds..."
+	sleep 5
+	for uppkg in $(find $PWD -type f -name "*src.tar.gz")
+		do
+			curl -u "$USERF":"$PASSF" -T "$uppkg" "$FTPURL"
+	done
 }
 
 if [ "$1" = "-help" ]; then
@@ -128,7 +137,7 @@ if [ "$1" = "-help" ]; then
 	exit 0
 fi
 
-while getopts "cdehru" opt; do
+while getopts ":cdehru" opt; do
 	case $opt in 
 		c)
 		  UPLFTP=0
@@ -156,7 +165,7 @@ while getopts "cdehru" opt; do
 		  exit 1
 		  ;;
 		?)
-		  printf "%s: This option is invalid '-$OPTARG'\n" "$SOFT"
+		  printf "%s: This option is invalid %s\n" "$SOFT" "-$OPTARG"
 		  exit 1
 		   ;;
 	esac
