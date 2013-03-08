@@ -1,8 +1,10 @@
-#!/bin/bash
+#!/bin/sh
 #   Script by Ypnose  <linuxien[AT]legtux[DOT]org>
 #   Inspired by afur-makepkg wrote by Tuxce
 #
 #   Upload packages on Archlinux.fr private FTP
+#   This script is POSIX compliant, it should work with every shells.
+#   It just needs curl
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -22,34 +24,47 @@
 
 SOFT="afuryc"
 VERS="1.0"
-COMPILE=0
+COMPILE=1
+UPLFTP=1
 CLEAN=0
-UPLFTP=0
 
 usage () {
-	echo -e "usage:  $SOFT <options>\n"
-	echo "  options:"
-	echo "    -c        Create packages without upload"
-	echo "    -d        Clean existing src/ and pkg/ directories"
-	echo "    -e        Edit PKGBUILD"
-	echo -e "    -u        Only upload packages to FTP\n"
-	echo -e "$SOFT compiles packages and upload them to Archlinux.fr FTP.\n"
+	printf "usage:  %s <options>\n" "$SOFT"
+	printf "  options:\n"
+	printf "    -c        Create packages without upload\n"
+	printf "    -d        Clean existing src/ and pkg/ directories\n"
+	printf "    -e        Edit PKGBUILD\n"
+	printf "    -h        Show help\n"
+	printf "    -r        Edit config file\n"
+	printf "    -u        Only upload packages to FTP\n"
+	printf "%s compiles packages and upload them to Archlinux.fr FTP.\n\n" "$SOFT"
 }
 
 checkconf () {
-	if [[ -r "$HOME/.afuryc.conf" ]]; then
-		source $HOME/.afuryc.conf
-		echo "$TEXT"
-		echo "$MAD"
+	if [ -r "$HOME/.afuryc.conf" ]; then
+		. $HOME/.afuryc.conf
 	fi
-	if [[ -r "$HOME/.config/afuryc.conf" ]]; then
-		source $HOME/.config/afuryc.conf
-		echo "$NEWLOC"
+	if [ -r "$HOME/.config/afuryc.conf" ]; then
+		. $HOME/.config/afuryc.conf
 	fi
-	if [[ ! -r "$HOME/.afuryc.conf" && ! -r "$HOME/.config/afuryc.conf" ]]; then
-		echo -e "Config file not found\nExiting!"
+	if [ ! -r "$HOME/.afuryc.conf" ] && [ ! -r "$HOME/.config/afuryc.conf" ]; then
+		printf "Config file not found. You should create a config file.\nExiting\n"
 		exit 1
 	fi
+}
+
+changeconf () {
+	if [ ! -r "$HOME/.afuryc.conf" ] && [ ! -r "$HOME/.config/afuryc.conf" ]; then
+		printf "Config file not found. You should create a config file.\nExiting\n"
+		exit 1
+	fi
+	if [ -r "$HOME/.afuryc.conf" ]; then
+		$EDITOR $HOME/.afuryc.conf
+	fi
+	if [ -r "$HOME/.config/afuryc.conf" ];then
+		$EDITOR $HOME/.config/afuryc.conf
+	fi
+	printf "Configs modified!\nDone\n"
 }
 
 build () {
@@ -58,94 +73,109 @@ build () {
 }
 
 cleanbuild () {
-	if [[ -d "src" || -d "pkg" ]]; then
+	if [ -d "src" ] || [ -d "pkg" ]; then
 	while true; do
-		read -p "Do you want to delete src/ & pkg/ folders ? [Y/n] " ask
+		printf "Do you want to delete src/ & pkg/ folders? [Y/n] "
+		read ask
 		case $ask in
 			[Yy])
-			echo "Deleting existing src/ and pkg/ folder!"
-			rm -r src pkg
-			break
-				;;
+			  printf "Deleting existing src/ and pkg/ folder!\n"
+			  rm -r src pkg
+			  break
+			  ;;
 			[Nn])
-			break
-				;;
+			  break
+			  ;;
 			*)
-			echo "Please answer yes or no!"
-				;;
+			  printf "Please answer yes or no!\n"
+			  ;;
 		esac
 	done
 	else
-		echo "Nothing to do!"
+		printf "The directories are missing!\n"
 	fi
 }
 
 edit () {
-	if [[ -n "$EDITOR" ]]; then
-		if [[ -r "PKGBUILD" ]]; then
+	if [ -n "$EDITOR" ]; then
+		if [ -r "PKGBUILD" ]; then
 			$EDITOR PKGBUILD
+			printf "Edit finished\n"
 		else
-			echo "PKGBUILD doesn't exist"
+			printf "PKGBUILD doesn't exist\n"
 		fi
 	else
-		echo '$EDITOR is not defined'
+		printf '$EDITOR is not defined\n'
 	fi
 }
 
 upload () {
-	echo "The following packages will be uploaded"
+	checkconf
+	printf "The following packages will be uploaded\n"
 	#for pkg in ""
 		#do
 			#echo
 	#done
-	echo "Uploading packages..."
+	printf "Uploading packages...\n"
+		#for pkg in ""
+		#do
+			#curl -u "$USERF":"$PASSF" -T "$pkg" "$FTPURL"
+	#done
 }
 
-if [[ "$1" = "-h" || "$1" = "-help" ]]; then
+if [ "$1" = "-help" ]; then
 	usage
-	exit 1
+	exit 0
 fi
 
-while getopts ":cdeu" opt; do
+while getopts "cdehru" opt; do
 	case $opt in 
 		c)
 		  UPLFTP=0
-		   ;;
+		  ;;
 		d)
 		  CLEAN=1
-		   ;;
+		  ;;
 		e)
 		  edit
-		   ;;
+		  exit 0
+		  ;;
+		h)
+		  usage
+		  exit 0
+		  ;;
+		r)
+		  changeconf
+		  exit 0
+		  ;;
 		u)
 		  COMPILE=0
-		   ;;
+		  ;;
 		:)
-		  echo NEEDARG
+		  printf "NEEDARG\n"
 		  exit 1
-		   ;;
+		  ;;
 		?)
-		  echo "$SOFT: This option is invalid '-$OPTARG'"
+		  printf "%s: This option is invalid '-$OPTARG'\n" "$SOFT"
 		  exit 1
 		   ;;
 	esac
 done
 
-if (( COMPILE )); then
+if [ "$((CLEAN))" -ne 0 ]; then
+	cleanbuild
+fi
+
+if [ "$((COMPILE))" -ne 0 ]; then
 	checkconf
 	build
 fi
 
-if (( CLEAN )); then
-	cleanbuild
-fi
-
-if (( UPLFTP )); then
+if [ "$((UPLFTP))" -ne 0 ]; then
 	upload
 fi
 
-
-
+exit 0
 
 
 
