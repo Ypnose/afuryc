@@ -23,10 +23,11 @@
 #  
 
 SOFT="afuryc"
-VERS="1.0"
+VERS="1.0.1"
 COMPILE=1
 UPLFTP=1
 CLEAN=0
+LOG=0
 
 usage () {
 	printf "usage:  %s <options>\n" "$SOFT"
@@ -37,7 +38,17 @@ usage () {
 	printf "%s\n" "    -h        Show help"
 	printf "%s\n" "    -r        Edit config file"
 	printf "%s\n" "    -u        Only upload packages to FTP"
+	printf "%s\n" "    -V        Print version"
 	printf "%s compiles packages and upload them to Archlinux.fr FTP.\n\n" "$SOFT"
+}
+
+version () {
+	printf "%s\n" "        __                       "
+	printf "%s\n" "  __ _ / _|_   _ _ __ _   _  ___ "
+	printf "%s    %s v. %s\n" " / _  | |_| | | | '__| | | |/ __|" "$SOFT" "$VERS"
+	printf "%s    %s\n" "| (_| |  _| |_| | |  | |_| | (__ " "Upload your packages to Archlinux.fr FTP."
+	printf "%s    %s\n" " \__,_|_|  \__,_|_|   \__, |\___|" "This program is under GNU General Public License version 2"
+	printf "%s\n\n" "                      |___/  "
 }
 
 filechk () {
@@ -73,7 +84,24 @@ changeconf () {
 }
 
 build () {
-	makepkg --source
+	if [ -n "$PKGDEST" ]; then
+		if [ -n "$PACKAGER" ]; then
+			PKGDEST=$PKGDEST PACKAGER=$PACKAGER makepkg
+			printf "%s\e[0;33m%s\e[0m\n\n" "The package will be stored in " "$PKGDEST"
+		else
+			PKGDEST=$PKGDEST makepkg
+			printf "%s\e[0;33m%s\e[0m\n\n" "The package will be stored in " "$PKGDEST"
+		fi
+	elif [ -z "$PKGDEST" ]; then
+		if [ -n "$PACKAGER" ]; then
+			PACKAGER=$PACKAGER makepkg
+			printf "%s\e[0;33m%s\e[0m\n\n" "The package will be stored in " "$PWD"
+		else
+			makepkg
+			printf "%s\e[0;33m%s\e[0m\n\n" "The package will be stored in " "$PWD"
+		fi
+	fi
+
 	#for file in find $PWD -type f -name "*src.tar.gz"
 		#do
 			#mv file >> 
@@ -83,11 +111,11 @@ build () {
 cleanbuild () {
 	if [ -d "src" ] || [ -d "pkg" ]; then
 	while true; do
-		printf "%s\n" "Do you want to delete src/ & pkg/ folders? [Y/n] "
+		printf "%s" "Do you want to delete src/ & pkg/ folders? [Y/n] "
 		read ask
 		case $ask in
 			[Yy])
-			  printf "%s\n" "Deleting existing src/ and pkg/ folder!"
+			  printf "\e[0;31m%s\e[0m\n" "Deleting existing src/ and/or pkg/ folder!"
 			  rm -r src pkg
 			  break
 			  ;;
@@ -108,7 +136,7 @@ edit () {
 	if [ -n "$EDITOR" ]; then
 		if [ -r "PKGBUILD" ]; then
 			$EDITOR PKGBUILD
-			printf "%s\n" "Edit finished."
+			printf "%s\n" "PKGBUILD edit finished."
 		else
 			printf "%s\n" "PKGBUILD doesn't exist"
 		fi
@@ -137,7 +165,7 @@ if [ "$1" = "-help" ]; then
 	exit 0
 fi
 
-while getopts ":cdehru" opt; do
+while getopts ":cdehlrtuV" opt; do
 	case $opt in 
 		c)
 		  UPLFTP=0
@@ -153,12 +181,23 @@ while getopts ":cdehru" opt; do
 		  usage
 		  exit 0
 		  ;;
+		l)
+		  LOG=1
+		  ;;
 		r)
 		  changeconf
 		  exit 0
 		  ;;
+		t)
+		  checkconf
+		  exit 0
+		  ;;
 		u)
 		  COMPILE=0
+		  ;;
+		V)
+		  version
+		  exit 0
 		  ;;
 		:)
 		  printf "NEEDARG\n"
@@ -167,7 +206,7 @@ while getopts ":cdehru" opt; do
 		?)
 		  printf "%s: This option is invalid %s\n" "$SOFT" "-$OPTARG"
 		  exit 1
-		   ;;
+		  ;;
 	esac
 done
 
