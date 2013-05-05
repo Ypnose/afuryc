@@ -21,13 +21,19 @@ It's a solid, easily hackable and dependency-less alternative (you only need ```
 ### Examples ###
 
 Create & send the package on the server:
-```afuryc```
+```sh
+afuryc
+```
 
 Edit PKGBUILD
-```afuryc -e```
+```sh
+afuryc -e
+```
 
 Upload a package already created:
-```afuryc -u```
+```sh
+afuryc -u
+```
 
 ### Notes ####
 
