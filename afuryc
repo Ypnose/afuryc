@@ -61,6 +61,11 @@ function filechk {
         print "Config file not found. You should create a config file similar to afury.conf.example"
         print "Exiting"
         exit 1
+    elif
+        [[ -r $HOME/.afuryc.conf && -r $HOME/.config/afuryc.conf ]]; then
+        print "Conflicts: 2 config files found. Remove one file"
+        print "Exiting"
+        exit 1
     fi
 }
 
