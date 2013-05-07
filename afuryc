@@ -24,17 +24,17 @@
 #set -x
 
 SOFT="${0##*/}"
-VERS="1.0.1"
+VERS="1.1"
 CMD="curl"
-#GNU stat isn't POSIX. awk is enough powerful.
-CHKFILE="$(ls -l $FILOC | awk '{k=0;for(i=0;i<=8;i++)k+=((substr($1,i+2,1)~/[rwx]/)*2^(8-i));if(k)printf("%0o\n",k)}')"
 COMPILE=1
 UPLFTP=1
 CLEAN=0
 LOG=0
+#GNU stat isn't POSIX. awk is enough powerful.
+#CHKFILE="$(ls -l $FILOC | awk '{k=0;for(i=0;i<=8;i++)k+=((substr($1,i+2,1)~/[rwx]/)*2^(8-i));if(k)printf("%0o\n",k)}')"
 
 function usage {
-    print "usage: $SOFT"
+    print "usage: $SOFT [-cdehruvV]"
     print "options:"
     print "    -c        Create packages without upload"
     print "    -d        Clean existing src/ and pkg/ directories"
@@ -45,7 +45,6 @@ function usage {
     print "    -v        curl with verbose output (useful for debugging)"
     print "    -V        Print version"
     print "$SOFT compiles packages and upload them to Archlinux.fr FTP."
-    print
 }
 
 function version {
@@ -54,8 +53,7 @@ function version {
     print "  / _  | |_| | | | '__| | | |/ __|" "  $SOFT" "$VERS"
     print " | (_| |  _| |_| | |  | |_| | (__ " "  Upload your packages to Archlinux.fr FTP."
     print "  \__,_|_|  \__,_|_|   \__, |\___|" "  This program is under GNU General Public License version 2"
-    print "                       |___/  "
-    print
+    print "                       |___/"
 }
 
 function filechk {
@@ -70,32 +68,26 @@ function checkconf {
     filechk
     if [[ -r $HOME/.afuryc.conf ]]; then
         . $HOME/.afuryc.conf
-        FILOC="$HOME/.afuryc.conf"
-        if (( $CHKFILE != 600 )); then
-            print "CARE!"
-        fi
+        CONFGS=$HOME/.afuryc.conf
     elif [[ -r $HOME/.config/afuryc.conf ]]; then
         . $HOME/.config/afuryc.conf
-        FILOC="$HOME/.config/afuryc.conf"
-        CHKFILE="$(ls -l $FILOC | awk '{k=0;for(i=0;i<=8;i++)k+=((substr($1,i+2,1)~/[rwx]/)*2^(8-i));if(k)printf("%0o\n",k)}')"
-        if (( $CHKFILE != 644 )); then
-            print "You should change afuryc permissions to 600!"
-        fi
+        CONFGS=$HOME/.config/afuryc.conf
+    fi
+    #print "$CONFGS"
+    CHKFILE=$(stat -c "%a" $CONFGS)
+    if (( $CHKFILE != 600 )); then
+            print "You should change afuryc.conf permissions to 600!"
     fi
 }
 
 function changeconf {
-    if [[ -z $EDITOR ]]; then
+    if [[ -n $EDITOR ]]; then
+        $EDITOR $CONFGS
+        print "Configs edited!"
+    else
         print '$EDITOR is not defined'
         exit 1
     fi
-    filechk
-    if [[ -r $HOME/.afuryc.conf ]]; then
-        $EDITOR $HOME/.afuryc.conf
-    elif [[ -r $HOME/.config/afuryc.conf ]]; then
-        $EDITOR $HOME/.config/afuryc.conf
-    fi
-    print "Configs modified!"
 }
 
 function build {
@@ -161,7 +153,6 @@ function edit {
 }
 
 function upload {
-    checkconf
     print "The following packages will be uploaded:"
     for pkg in $(find $PWD -type f -name "*src.tar.gz")
         do
@@ -171,7 +162,7 @@ function upload {
     sleep 5
     for uppkg in $(find $PWD -type f -name "*src.tar.gz")
         do
-            $CMD -u \"$USERF\":\"$PASSF\" -T "$uppkg" "$FTPURL"
+            "$CMD" -u \"$USERF\":\"$PASSF\" -T "$uppkg" "$FTPURL"
     done
 }
 
@@ -194,7 +185,9 @@ while getopts ":cdehlrtuvV" opt; do
         l)
           LOG=1
           ;;
+        #TEST
         r)
+          checkconf
           changeconf
           exit 0
           ;;
@@ -202,6 +195,7 @@ while getopts ":cdehlrtuvV" opt; do
           checkconf
           exit 0
           ;;
+        #####
         u)
           COMPILE=0
           ;;
