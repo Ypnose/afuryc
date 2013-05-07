@@ -35,6 +35,12 @@ Upload a package already created:
 afuryc -u
 ```
 
+### TODO ###
+
+    [] Finish the script
+    [] XDG Base Directory support
+    [] POSIX shell/bash version
+
 ### Notes ####
 
 The script isn't ready yet.
