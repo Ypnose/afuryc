@@ -31,7 +31,7 @@ Edit PKGBUILD:
 afuryc -e
 ```
 
-Create packages on /tmp without upload:
+Create packages on ```/tmp``` without upload:
 ```sh
 afuryc -bt
 ```
