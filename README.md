@@ -46,7 +46,3 @@ afuryc -u
     [x] Finish the script
     [x] XDG Base Directory support
     [] POSIX shell/bash version
-
-### Notes ####
-
-The script isn't ready yet.
