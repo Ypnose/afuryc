@@ -5,5 +5,4 @@ USERF="foo"
 PASSF="foopass"
 FTPURL="ftp://afur.archlinux.fr"
 ### MAKEPKG ###
-PKGDEST=""
 PACKAGER=""
