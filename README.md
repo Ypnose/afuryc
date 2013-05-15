@@ -45,4 +45,5 @@ afuryc -u
 
     [x] Finish the script
     [x] XDG Base Directory support
+    [] Verbose
     [] POSIX shell/bash version

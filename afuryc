@@ -35,13 +35,14 @@ LOG=0
 TMP=0
 
 function usage {
-    print "usage: $SOFT [-bcdehtuvV]"
+    print "usage: $SOFT [-bcdehlptuvV]"
     print "options:"
     print "    -b        Create packages without upload"
     print "    -c        Edit config file"
     print "    -d        Clean existing src/ and pkg/ directories"
-    print "    -e        Edit PKGBUILD"
+    print "    -e        Edit PKGBUILD (fallback option)"
     print "    -h        Show help and exit"
+    print "    -p        Edit PKGBUILD"
     print "    -t        Build packages on /tmp"
     print "    -u        Only upload packages to FTP"
     print "    -v        curl with verbose output (useful for debugging)"
@@ -172,24 +173,23 @@ function edit {
 function upload {
     print "\e[0;33m>> The following packages will be uploaded:\e[0m"
     TARB=$(find $PWD -type f -follow -iname "*src.tar.gz" -o -iname "*.pkg.tar.xz")
-    for pkg in $TARB
-        do
+    for pkg in $TARB; do
             print "   $pkg"
     done
     print "\e[1;36m>> Uploading packages in 5 seconds...\e[0m"
     sleep 5
-    for uppkg in $TARB
-        do
-            curl -u $USERF:$PASSF -T "$uppkg" "$FTPURL"
+    for uppkg in $TARB; do
+            curl --progress-bar -u $USERF:$PASSF -T "$uppkg" "$FTPURL"
+            RET="$?"
+            if (( $RET == 0 )); then
+                print "\e[0;32m>> ${uppkg##*/} upload done!\e[0m"
+            else
+                print "\e[0;31m>> Error during upload: Errno $RET\e[0m"
+            fi
     done
-    if (( $? == 0 )); then
-        print "\e[0;32m>> Upload done!\e[0m"
-    else
-        print "\e[0;31m>> Error during upload\e[0m"
-    fi
 }
 
-while getopts ":bcdehltuvV" opt; do
+while getopts ":bcdehlptuvV" opt; do
     case $opt in 
         b)
           UPLFTP=0
@@ -202,7 +202,7 @@ while getopts ":bcdehltuvV" opt; do
         d)
           CLEAN=1
           ;;
-        e)
+        e|p)
           edit
           exit 0
           ;;
@@ -217,6 +217,7 @@ while getopts ":bcdehltuvV" opt; do
           TMP=1
           ;;
         u)
+          checkconf
           COMPILE=0
           ;;
         v)
