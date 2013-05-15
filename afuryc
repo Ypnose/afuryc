@@ -93,6 +93,21 @@ function checkconf {
     fi
 }
 
+function checkvar {
+    if [[ -z $USERF ]]; then
+        print '\e[0;31m$USERF is empty!\e[0m'
+        exit 1
+    fi
+    if [[ -z $PASSF ]]; then
+        print '\e[0;31m$PASSF is empty!\e[0m'
+        exit 1
+    fi
+    if [[ -z $FTPURL ]]; then
+        print '\e[0;31m$FTPURL is empty!\e[0m'
+        exit 1
+    fi
+}
+
 function changeconf {
     if [[ -n $EDITOR ]]; then
         $EDITOR $CONFGS
@@ -152,7 +167,7 @@ function cleanbuild {
         esac
     done
     else
-        print "The directories are missing!"
+        print "The directories src/ & pkg/ are missing!"
     fi
 }
 
@@ -170,6 +185,7 @@ function edit {
 }
 
 function upload {
+    checkvar
     PKGF=$(find $PWD -follow -type f -iname "*.pkg.tar.xz")
     TARB=$(find $PWD -follow -type f -iname "*.src.tar.gz")
     print "\e[0;33m>> The following packages will be uploaded:\e[0m"
@@ -177,6 +193,7 @@ function upload {
     print "   $TARB"
     print "\e[1;36m>> Uploading packages in 5 seconds...\e[0m"
     sleep 5
+
     $CMDUP -u $USERF:$PASSF -T "{$PKGF,$TARB}" "$FTPURL"
     RET="$?"
     if (( $RET == 0 )); then

@@ -1,4 +1,4 @@
-# This file is a pattern. You can place it, at $HOME/.afuryc.conf or $HOME/.config/afuryc.conf
+# This file is a pattern. You can place it, at $HOME/.afuryc.conf or $XDG_CONFIG_HOME/afuryc.conf ($HOME/.config/afuryc.conf)
 # You must apply a chmod 600 on it!
 ### FTP ###
 USERF="foo"
