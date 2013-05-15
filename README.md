@@ -27,9 +27,9 @@ Create & send the packages on the server:
 afuryc
 ```
 
-Edit config (```sh $HOME/.afuryc.conf``` or ```sh $XDG_CONFIG_HOME/afuryc.cong```)
+Edit config (```HOME/.afuryc.conf``` or ```$XDG_CONFIG_HOME/afuryc.conf```)
 ```sh
-afuryc -p
+afuryc -c
 ```
 
 Edit PKGBUILD:
