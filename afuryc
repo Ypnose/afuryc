@@ -26,16 +26,15 @@
 #CHKFILE="$(ls -l $FILOC | awk '{k=0;for(i=0;i<=8;i++)k+=((substr($1,i+2,1)~/[rwx]/)*2^(8-i));if(k)printf("%0o\n",k)}')"
 
 SOFT="${0##*/}"
-VERS="1.2"
-CMDUP="curl -s"
+VERS="1.3"
+CMDUP="curl --progress-bar"
 COMPILE=1
 UPLFTP=1
 CLEAN=0
-LOG=0
 TMP=0
 
 function usage {
-    print "usage: $SOFT [-bcdehlptuvV]"
+    print "usage: $SOFT [-bcdehptuvV]"
     print "options:"
     print "    -b        Create packages without upload"
     print "    -c        Edit config file"
@@ -171,25 +170,28 @@ function edit {
 }
 
 function upload {
+    PKGF=$(find $PWD -follow -type f -iname "*.pkg.tar.xz")
+    TARB=$(find $PWD -follow -type f -iname "*.src.tar.gz")
     print "\e[0;33m>> The following packages will be uploaded:\e[0m"
-    TARB=$(find $PWD -type f -follow -iname "*src.tar.gz" -o -iname "*.pkg.tar.xz")
-    for pkg in $TARB; do
-            print "   $pkg"
-    done
+    print "   $PKGF"
+    print "   $TARB"
     print "\e[1;36m>> Uploading packages in 5 seconds...\e[0m"
     sleep 5
-    for uppkg in $TARB; do
-            curl --progress-bar -u $USERF:$PASSF -T "$uppkg" "$FTPURL"
-            RET="$?"
-            if (( $RET == 0 )); then
-                print "\e[0;32m>> ${uppkg##*/} upload done!\e[0m"
-            else
-                print "\e[0;31m>> Error during upload: Errno $RET\e[0m"
-            fi
-    done
+    $CMDUP -u $USERF:$PASSF -T "{$PKGF,$TARB}" "$FTPURL"
+    RET="$?"
+    if (( $RET == 0 )); then
+        print "\e[0;32m>> Upload successful!\e[0m"
+    else
+        print "\e[0;31m>> Error during upload: Errno $RET\e[0m"
+    fi
 }
 
-while getopts ":bcdehlptuvV" opt; do
+if [[ $1 = "-help" ]]; then
+    usage
+    exit 0
+fi
+
+while getopts ":bcdehptuvV" opt; do
     case $opt in 
         b)
           UPLFTP=0
@@ -206,7 +208,7 @@ while getopts ":bcdehlptuvV" opt; do
           edit
           exit 0
           ;;
-        h|help)
+        h)
           usage
           exit 0
           ;;
