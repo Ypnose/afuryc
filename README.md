@@ -6,13 +6,14 @@ It's a solid, easily hackable and dependency-less alternative (you only need ```
 
 ### Usage ###
 
-    usage: afuryc [-bcdehtuvV]
+    usage: afuryc [-bcdehptuvV]
       options:
         -b        Create packages without upload
         -c        Edit config file
         -d        Clean existing src/ and pkg/ directories
-        -e        Edit PKGBUILD
+        -e        Edit PKGBUILD (fallback option)
         -h        Show help and exit
+        -p        Edit PKGBUILD
         -t        Build packages on /tmp
         -u        Only upload packages to FTP
         -v        curl with verbose output (useful for debugging)
@@ -21,14 +22,14 @@ It's a solid, easily hackable and dependency-less alternative (you only need ```
 
 ### Examples ###
 
-Create & send the package on the server:
+Create & send the packages on the server:
 ```sh
 afuryc
 ```
 
 Edit PKGBUILD:
 ```sh
-afuryc -e
+afuryc -p
 ```
 
 Create packages on ```/tmp``` without upload:
@@ -36,7 +37,7 @@ Create packages on ```/tmp``` without upload:
 afuryc -bt
 ```
 
-Upload a package already created:
+Upload packages already created:
 ```sh
 afuryc -u
 ```
