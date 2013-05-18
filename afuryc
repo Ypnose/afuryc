@@ -51,9 +51,9 @@ function usage {
 function version {
     print "         __                       "
     print "   __ _ / _|_   _ _ __ _   _  ___ "
-    print "  / _  | |_| | | | '__| | | |/ __|" "  $SOFT"
-    print " | (_| |  _| |_| | |  | |_| | (__ " "  Upload your packages to Archlinux.fr FTP."
-    print "  \__,_|_|  \__,_|_|   \__, |\___|" "  This program is under GNU General Public License version 2"
+    print "  / _  | |_| | | | '__| | | |/ __|" "  $SOFT: Upload your packages to Archlinux.fr FTP."
+    print " | (_| |  _| |_| | |  | |_| | (__ " "  This program is under GNU General Public License version 2"
+    print "  \__,_|_|  \__,_|_|   \__, |\___|"
     print "                       |___/\n"
 }
 
@@ -88,7 +88,7 @@ function checkconf {
 
     CHKFILE=$(stat -c "%a" $CONFGS)
     if (( $CHKFILE != 600 )); then
-            print "You should change afuryc.conf permissions to 600!"
+            print "\e[0;31mWARNING: You should change ${CONFGS##*/} permissions to 600!\e[0m"
     fi
 }
 
@@ -177,9 +177,11 @@ function edit {
             print "PKGBUILD edit finished."
         else
             print "PKGBUILD doesn't exist"
+            exit 1
         fi
     else
         print '$EDITOR is not defined'
+        exit 1
     fi
 }
 
