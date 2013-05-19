@@ -2,7 +2,8 @@ Afuryc
 ------
 
 ```Afuryc``` is a script which provides a way to create and upload your Archlinux packages, via FTP.
-It's a solid, easily hackable and dependency-less alternative (you only need ```curl```) to [afur-makepkg](http://wiki.archlinux.fr/Depot_archlinuxfr#afur-makepkg). It has been created for my needs.
+It's a solid, easily hackable and dependency-less alternative (you only need ```curl```) to 
+[afur-makepkg](http://wiki.archlinux.fr/Depot_archlinuxfr#afur-makepkg). It has been created for my special needs.
 
 ### Usage ###
 

@@ -65,13 +65,12 @@ function filechk {
     fi
         
     if [[ ! -r $HOME/.afuryc.conf && ! -r $FOLCF ]]; then
-        print "Config file not found. You should create a config file similar to afury.conf.example"
-        print "Exiting"
+        print "Config file not found."
+        print "You should create a config file similar to afuryc.conf.example"
         exit 1
     elif
         [[ -r $HOME/.afuryc.conf && -r $FOLCF ]]; then
         print "Conflicts: 2 config files found. Remove one file"
-        print "Exiting"
         exit 1
     fi
 }
@@ -187,8 +186,8 @@ function edit {
 
 function upload {
     checkvar
-    PKGF=$(find $PWD -follow -type f -iname "*.pkg.tar.xz")
-    TARB=$(find $PWD -follow -type f -iname "*.src.tar.gz")
+    PKGF=$(find $PWD -follow -maxdepth 1 -type f -iname "*.pkg.tar.xz")
+    TARB=$(find $PWD -follow -maxdepth 1 -type f -iname "*.src.tar.gz")
     if [[ -z $PKGF && -z $TARB ]]; then
         print "Nothing to upload!"
         exit 1
