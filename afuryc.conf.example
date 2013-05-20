@@ -5,4 +5,6 @@ USERF="foo"
 PASSF="foopass"
 FTPURL="ftp://afur.archlinux.fr"
 ### MAKEPKG ###
-PACKAGER=""
+# PACKAGER is an optional variable. It may be useful when you query package informations, it'll display packager with your name / email address.
+# You can live without it!
+#PACKAGER="TuxBeastie <foo[AT]unixland.kernel>"
