@@ -2,8 +2,7 @@ Afuryc
 ------
 
 ```Afuryc``` is a script which provides a way to create and upload your Archlinux packages, via FTP.
-It's a solid, easily hackable and dependency-less alternative (you only need ```curl```) to 
-[afur-makepkg](http://wiki.archlinux.fr/Depot_archlinuxfr#afur-makepkg). It has been created for my special needs.
+It's a solid, easily hackable and dependency-less alternative (you only need ```curl```) to [afur-makepkg](http://wiki.archlinux.fr/Depot_archlinuxfr#afur-makepkg). It has been created for my special needs.
 
 ### Usage ###
 
@@ -11,7 +10,7 @@ It's a solid, easily hackable and dependency-less alternative (you only need ```
       options:
         -b        Create packages without upload
         -c        Edit config file
-        -d        Clean existing src/ and pkg/ directories
+        -d        Clean existing src and pkg directories
         -e        Edit PKGBUILD (fallback option)
         -h        Show help and exit
         -p        Edit PKGBUILD
@@ -24,27 +23,27 @@ It's a solid, easily hackable and dependency-less alternative (you only need ```
 ### Examples ###
 
 Create & send the packages on the server:
-```sh
+```bash
 afuryc
 ```
 
 Edit config (```HOME/.afuryc.conf``` or ```$XDG_CONFIG_HOME/afuryc.conf```)
-```sh
+```bash
 afuryc -c
 ```
 
 Edit PKGBUILD:
-```sh
+```bash
 afuryc -p
 ```
 
 Create packages on ```/tmp``` without upload:
-```sh
+```bash
 afuryc -bt
 ```
 
 Upload packages already created:
-```sh
+```bash
 afuryc -u
 ```
 
