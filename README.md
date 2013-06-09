@@ -23,29 +23,24 @@ It's a solid, easily hackable and dependency-less alternative (you only need ```
 ### Examples ###
 
 Create & send the packages on the server:
-```bash
-afuryc
-```
+
+    afuryc
 
 Edit config (```HOME/.afuryc.conf``` or ```$XDG_CONFIG_HOME/afuryc.conf```)
-```bash
-afuryc -c
-```
+
+    afuryc -c
 
 Edit PKGBUILD:
-```bash
-afuryc -p
-```
+
+    afuryc -p
 
 Create packages on ```/tmp``` without upload:
-```bash
-afuryc -bt
-```
+
+    afuryc -bt
 
 Upload packages already created:
-```bash
-afuryc -u
-```
+
+    afuryc -u
 
 ### TODO ###
 
