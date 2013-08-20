@@ -1,10 +1,11 @@
-#!/bin/mksh
+#!/usr/bin/mksh
 #   Script by Ypnose  <linuxien[AT]legtux[DOT]org>
 #   Inspired by afur-makepkg wrote by Tuxce
 #
 #   Upload packages on Archlinux.fr private FTP.
 #   It just needs curl and makepkg, nothing more.
 #
+#   Copyright (C) 2013 Ypnose
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
 #   the Free Software Foundation; either version 2 of the License, or
@@ -26,253 +27,262 @@
 #CHKFILE="$(ls -l $FILOC | awk '{k=0;for(i=0;i<=8;i++)k+=((substr($1,i+2,1)~/[rwx]/)*2^(8-i));if(k)printf("%0o\n",k)}')"
 
 SOFT="${0##*/}"
-CMDUP="curl --progress-bar"
 COMPILE=1
 UPLFTP=1
 CLEAN=0
 TMP=0
 
 function usage {
-    print "usage: $SOFT [-bcdehptuvV]"
-    print "options:"
-    print "    -b        Create packages without upload"
-    print "    -c        Edit config file"
-    print "    -d        Clean existing src/ and pkg/ directories"
-    print "    -e        Edit PKGBUILD (fallback option)"
-    print "    -h        Show help and exit"
-    print "    -p        Edit PKGBUILD"
-    print "    -t        Build packages on /tmp"
-    print "    -u        Only upload packages to FTP"
-    print "    -v        curl with verbose output (useful for debugging)"
-    print "    -V        Print version"
-    print "$SOFT compiles packages and upload them to Archlinux.fr FTP."
+	cat <<- EOF
+	usage: $SOFT [-bcdehptuvV]
+	options:
+	   -b        Create packages without upload
+	   -c        Edit config file
+	   -d        Clean existing src/ and pkg/ directories
+	   -e        Edit PKGBUILD (fallback option)
+	   -h        Show help and exit
+	   -p        Edit PKGBUILD
+	   -t        Build packages on /tmp
+	   -u        Only upload packages to FTP
+	   -v        curl with verbose output (useful for debugging)
+	   -V        Print version
+	$SOFT compiles packages and upload them to Archlinux.fr FTP.
+	EOF
 }
 
 function version {
-    print "         __                       "
-    print "   __ _ / _|_   _ _ __ _   _  ___ "
-    print "  / _  | |_| | | | '__| | | |/ __|" "  $SOFT: Upload your packages to Archlinux.fr FTP."
-    print " | (_| |  _| |_| | |  | |_| | (__ " "  This program is under GNU General Public License version 2"
-    print "  \__,_|_|  \__,_|_|   \__, |\___|"
-    print "                       |___/\n"
+	cat <<- EOF
+	         __                       
+	   __ _ / _|_   _ _ __ _   _  ___ 
+	  / _  | |_| | | | '__| | | |/ __|   $SOFT: Upload your packages to Archlinux.fr FTP.
+	 | (_| |  _| |_| | |  | |_| | (__    This program is under GNU General Public License version 2
+	  \__,_|_|  \__,_|_|   \__, |\___|
+	                       |___/
+	
+	EOF
 }
 
 function filechk {
-    if [[ -n $XDG_CONFIG_HOME ]]; then
-        FOLCF="$XDG_CONFIG_HOME/afuryc.conf"
-    else
-        FOLCF="$HOME/.config/afuryc.conf"
-    fi
-        
-    if [[ ! -r $HOME/.afuryc.conf && ! -r $FOLCF ]]; then
-        print "Config file not found."
-        print "You should create a config file similar to afuryc.conf.example"
-        exit 1
-    elif
-        [[ -r $HOME/.afuryc.conf && -r $FOLCF ]]; then
-        print "Conflicts: 2 config files found. Remove one file"
-        exit 1
-    fi
+	if [[ -n $XDG_CONFIG_HOME ]]; then
+		FOLCF="$XDG_CONFIG_HOME/afuryc.conf"
+	else
+		FOLCF="$HOME/.config/afuryc.conf"
+	fi
+
+	if [[ ! -r $HOME/.afuryc.conf && ! -r $FOLCF ]]; then
+		print "Config file not found."
+		print "You should create a config file similar to afuryc.conf.example"
+		exit 1
+	elif
+		[[ -r $HOME/.afuryc.conf && -r $FOLCF ]]; then
+		print "Conflicts: 2 config files found. Remove one file"
+		exit 1
+	fi
 }
 
 function checkconf {
-    filechk
-    if [[ -r $HOME/.afuryc.conf ]]; then
-        . $HOME/.afuryc.conf
-        CONFGS=$HOME/.afuryc.conf
-    elif [[ -r $FOLCF ]]; then
-        . $FOLCF
-        CONFGS=$FOLCF
-    fi
+	filechk
+	if [[ -r $HOME/.afuryc.conf ]]; then
+		. $HOME/.afuryc.conf
+		CONFGS="$HOME/.afuryc.conf"
+	elif [[ -r $FOLCF ]]; then
+		. $FOLCF
+		CONFGS="$FOLCF"
+	fi
 
-    CHKFILE=$(stat -c "%a" $CONFGS)
-    if (( $CHKFILE != 600 )); then
-            print "\e[0;31mWARNING: You should change ${CONFGS##*/} permissions to 600!\e[0m"
-    fi
+	CHKFILE=$(stat -c "%a" $CONFGS)
+	if (( $CHKFILE != 600 )); then
+			print "\e[0;31mWARNING: You should change ${CONFGS##*/} permissions to 600!\e[0m"
+	fi
 }
 
 function checkvar {
-    if [[ -z $USERF ]]; then
-        print "\e[0;31m${CONFGS##*/}:" '$USERF is empty!\e[0m'
-        exit 1
-    fi
-    if [[ -z $PASSF ]]; then
-        print "\e[0;31m${CONFGS##*/}:" '$PASSF is empty!\e[0m'
-        exit 1
-    fi
-    if [[ -z $FTPURL ]]; then
-        print "\e[0;31m${CONFGS##*/}:" '$FTPURL is empty!\e[0m'
-        exit 1
-    fi
+	if [[ -z $USERF ]]; then
+		print "\e[0;31m${CONFGS##*/}:" '$USERF is empty!\e[0m'
+		exit 1
+	fi
+	if [[ -z $PASSF ]]; then
+		print "\e[0;31m${CONFGS##*/}:" '$PASSF is empty!\e[0m'
+		exit 1
+	fi
+	if [[ -z $FTPURL ]]; then
+		print "\e[0;31m${CONFGS##*/}:" '$FTPURL is empty!\e[0m'
+		exit 1
+	fi
 }
 
 function changeconf {
-    if [[ -n $EDITOR ]]; then
-        $EDITOR $CONFGS
-        print "Configs edited!"
-    else
-        print '$EDITOR is not defined'
-        exit 1
-    fi
+	if [[ -n $EDITOR ]]; then
+		"$EDITOR" "$CONFGS"
+		print "Configs edited!"
+	else
+		print '$EDITOR is not defined'
+		exit 1
+	fi
+}
+
+function testpkgb {
+	if [[ ! -r PKGBUILD ]]; then
+		print "PKGBUILD doesn't exist!"
+		exit 1
+	fi
 }
 
 function build {
-    if (( $TMP == 0 )); then
-        print "\e[1;36m>> Creating package\e[0m"
-        if [[ -n $PACKAGER ]]; then
-            PACKAGER=$PACKAGER makepkg
-        else
-            makepkg
-        fi
-        print "\e[1;36m>> Creating source tarball\e[0m"
-        makepkg --source
-        if (( $? == 0 )); then
-            print "\e[0;33m>> The packages will be stored in $PWD\e[0m"
-        fi
-    else
-        TMPDIR=$(mktemp -d)
-        print "\e[1;36m>> Creating package\e[0m"
-        if [[ -n $PACKAGER ]]; then
-            PACKAGER="$PACKAGER" SRCDEST="$TMPDIR" BUILDDIR="$TMPDIR" PKGDEST="$TMPDIR" makepkg
-        else
-            SRCDEST="$TMPDIR" BUILDDIR="$TMPDIR" PKGDEST="$TMPDIR" makepkg
-        fi
-        print "\e[1;36m>> Creating source tarball\e[0m"
-        SRCDEST="$TMPDIR" SRCPKGDEST="$TMPDIR" makepkg --source
-        if (( $? == 0 )); then
-            print "\e[0;33m>> The package will be stored in $TMPDIR\e[0m"
-        fi
-    fi
+	testpkgb
+	if (( $TMP == 0 )); then
+		print "\e[1;36m>> Creating package\e[0m"
+		if [[ -n $PACKAGER ]]; then
+			PACKAGER="$PACKAGER" makepkg
+		else
+			makepkg
+		fi
+		print "\e[1;36m>> Creating source tarball\e[0m"
+		makepkg --source
+		if (( $? == 0 )); then
+			print "\e[0;33m>> The packages will be stored in $PWD\e[0m"
+		fi
+	else
+		TMPDIR=$(mktemp -d)
+		print "\e[1;36m>> Creating package\e[0m"
+		if [[ -n $PACKAGER ]]; then
+			PACKAGER="$PACKAGER" SRCDEST="$TMPDIR" BUILDDIR="$TMPDIR" PKGDEST="$TMPDIR" makepkg
+		else
+			SRCDEST="$TMPDIR" BUILDDIR="$TMPDIR" PKGDEST="$TMPDIR" makepkg
+		fi
+		print "\e[1;36m>> Creating source tarball\e[0m"
+		SRCDEST="$TMPDIR" SRCPKGDEST="$TMPDIR" makepkg --source
+		if (( $? == 0 )); then
+			print "\e[0;33m>> The package will be stored in $TMPDIR\e[0m"
+		fi
+	fi
 }
 
 function cleanbuild {
-    if [[ -d src || -d pkg ]]; then
-    while true; do
-        print "Do you want to delete src/ &/or pkg/ folders? [Y/n] "
-        read ask
-        case $ask in
-            [Yy])
-              print "\e[0;31mDeleting existing src/ and/or pkg/ folder!\e[0m"
-              rm -r src pkg
-              break
-              ;;
-            [Nn])
-              break
-              ;;
-            *)
-              print "Please answer yes or no!"
-              ;;
-        esac
-    done
-    else
-        print "The directories src/ & pkg/ are missing!"
-    fi
+	if [[ -d src || -d pkg ]]; then
+	while true; do
+		print "Do you want to delete src/ &/or pkg/ folders? [Y/n] "
+		read ask
+		case $ask in
+			[Yy])
+			  print "\e[0;31mDeleting existing src/ and/or pkg/ folder!\e[0m"
+			  rm -r src pkg
+			  break
+			  ;;
+			[Nn])
+			  break
+			  ;;
+			*)
+			  print "Please answer yes or no!"
+			  ;;
+		esac
+	done
+	else
+		print "The directories src/ & pkg/ are missing!"
+	fi
 }
 
 function edit {
-    if [[ -n $EDITOR ]]; then
-        if [[ -r PKGBUILD ]]; then
-            $EDITOR PKGBUILD
-            print "PKGBUILD edit finished."
-        else
-            print "PKGBUILD doesn't exist"
-            exit 1
-        fi
-    else
-        print '$EDITOR is not defined'
-        exit 1
-    fi
+	testpkgb
+	if [[ -n $EDITOR ]]; then
+		"$EDITOR" PKGBUILD
+		print "PKGBUILD edit finished."
+	else
+		print '$EDITOR is not defined'
+		exit 1
+	fi
 }
 
 function upload {
-    checkvar
-    PKGF=$(find $PWD -follow -maxdepth 1 -type f -iname "*.pkg.tar.xz")
-    TARB=$(find $PWD -follow -maxdepth 1 -type f -iname "*.src.tar.gz")
-    if [[ -z $PKGF && -z $TARB ]]; then
-        print "Nothing to upload!"
-        exit 1
-    fi
-    print "\e[0;33m>> The following packages will be uploaded:\e[0m"
-    print "   $PKGF"
-    print "   $TARB"
-    print "\e[1;32m>> Current FTP:\e[0m $FTPURL"
-    print "\e[1;36m>> Uploading packages in 5 seconds...\e[0m"
-    sleep 5
+	set -x
+	checkvar
+	PKGF="$(find $PWD -follow -maxdepth 1 -type f -iname "*.pkg.tar.xz")"
+	TARB="$(find $PWD -follow -maxdepth 1 -type f -iname "*.src.tar.gz")"
+	if [[ -z $PKGF && -z $TARB ]]; then
+		print "Nothing to upload!"
+		exit 1
+	fi
+	print "\e[0;33m>> The following packages will be uploaded:\e[0m"
+	[[ -n $PKGF ]] && print "   $PKGF"
+	[[ -n $TARB ]] && print "   $TARB"
+	print "\e[1;32m>> Current FTP:\e[0m $FTPURL"
+	print "\e[1;36m>> Uploading packages in 5 seconds...\e[0m"
+	sleep 5
 
-    $CMDUP -u $USERF:$PASSF -T "{$PKGF,$TARB}" "$FTPURL"
-    RET="$?"
-    if (( $RET == 0 )); then
-        print "\e[0;32m>> Upload successful!\e[0m"
-    else
-        print "\e[0;31mError during upload: Errno $RET\e[0m"
-    fi
+	curl --progress-bar ${CMDAR:+"$CMDAR"} -u ${USERF}:${PASSF} -T "{${PKGF:+"$PKGF"}${TARB:+,"$TARB"}}" "$FTPURL"
+	RET="$?"
+	if (( $RET == 0 )); then
+		print "\e[0;32m>> Upload successful!\e[0m"
+	else
+		print "\e[0;31mError during upload: Errno $RET\e[0m"
+	fi
 }
 
 if [[ $1 = "-help" ]]; then
-    usage
-    exit 0
+	usage
+	exit 0
 fi
 
 while getopts ":bcdehptuvV" opt; do
-    case $opt in 
-        b)
-          UPLFTP=0
-          ;;
-        c)
-          checkconf
-          changeconf
-          exit 0
-          ;;
-        d)
-          CLEAN=1
-          ;;
-        e|p)
-          edit
-          exit 0
-          ;;
-        h)
-          usage
-          exit 0
-          ;;
-        l)
-          LOG=1
-          ;;
-        t)
-          TMP=1
-          ;;
-        u)
-          checkconf
-          COMPILE=0
-          ;;
-        v)
-          CMDUP="curl -v"
-          ;;
-        V)
-          version
-          exit 0
-          ;;
-        :)
-          print "NEEDARG"
-          exit 1
-          ;;
-        ?)
-          print "$SOFT: This option is invalid -$OPTARG"
-          exit 1
-          ;;
-    esac
+	case $opt in 
+		b)
+		  UPLFTP=0
+		  ;;
+		c)
+		  checkconf
+		  changeconf
+		  exit 0
+		  ;;
+		d)
+		  CLEAN=1
+		  ;;
+		e|p)
+		  edit
+		  exit 0
+		  ;;
+		h)
+		  usage
+		  exit 0
+		  ;;
+		l)
+		  LOG=1
+		  ;;
+		t)
+		  TMP=1
+		  ;;
+		u)
+		  checkconf
+		  COMPILE=0
+		  ;;
+		v)
+		  CMDAR="-v"
+		  ;;
+		V)
+		  version
+		  exit 0
+		  ;;
+		:)
+		  print "NEEDARG"
+		  exit 1
+		  ;;
+		?)
+		  print "$SOFT: This option is invalid -$OPTARG"
+		  exit 1
+		  ;;
+	esac
 done
 
 if (( $CLEAN != 0 )); then
-    cleanbuild
+	cleanbuild
 fi
 
 if (( $COMPILE != 0 )); then
-    checkconf
-    build
+	checkconf
+	build
 fi
 
 if (( $UPLFTP != 0 )); then
-    upload
+	upload
 fi
 
 exit 0
