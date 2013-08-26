@@ -70,12 +70,12 @@ function filechk {
 	fi
 
 	if [[ ! -r $HOME/.afuryc.conf && ! -r $FOLCF ]]; then
-		print "Config file not found."
-		print "You should create a config file similar to afuryc.conf.example"
+		print -u2 "Config file not found."
+		print -u2 "You should create a config file similar to afuryc.conf.example"
 		exit 1
 	elif
 		[[ -r $HOME/.afuryc.conf && -r $FOLCF ]]; then
-		print "Conflicts: 2 config files found. Remove one file"
+		print -u2 "Conflicts: 2 config files found. Remove one file"
 		exit 1
 	fi
 }
@@ -90,23 +90,24 @@ function checkconf {
 		CONFGS="$FOLCF"
 	fi
 
+	#Tiny hack
 	CHKFILE=$(stat -c "%a" $CONFGS)
-	if (( $CHKFILE != 600 )); then
-			print "\e[0;31mWARNING: You should change ${CONFGS##*/} permissions to 600!\e[0m"
+	if (( CHKFILE != 600 )); then
+		print "\e[0;31mWARNING: You should change ${CONFGS##*/} permissions to 600!\e[0m"
 	fi
 }
 
 function checkvar {
 	if [[ -z $USERF ]]; then
-		print "\e[0;31m${CONFGS##*/}:" '$USERF is empty!\e[0m'
+		print -u2 "\e[0;31m${CONFGS##*/}:" '$USERF is empty!\e[0m'
 		exit 1
 	fi
 	if [[ -z $PASSF ]]; then
-		print "\e[0;31m${CONFGS##*/}:" '$PASSF is empty!\e[0m'
+		print -u2 "\e[0;31m${CONFGS##*/}:" '$PASSF is empty!\e[0m'
 		exit 1
 	fi
 	if [[ -z $FTPURL ]]; then
-		print "\e[0;31m${CONFGS##*/}:" '$FTPURL is empty!\e[0m'
+		print -u2 "\e[0;31m${CONFGS##*/}:" '$FTPURL is empty!\e[0m'
 		exit 1
 	fi
 }
@@ -116,21 +117,21 @@ function changeconf {
 		"$EDITOR" "$CONFGS"
 		print "Configs edited!"
 	else
-		print '$EDITOR is not defined'
+		print -u2 '$EDITOR is not defined'
 		exit 1
 	fi
 }
 
 function testpkgb {
 	if [[ ! -r PKGBUILD ]]; then
-		print "PKGBUILD doesn't exist!"
+		print -u2 "PKGBUILD doesn't exist!"
 		exit 1
 	fi
 }
 
 function build {
 	testpkgb
-	if (( $TMP == 0 )); then
+	if (( TMP == 0 )); then
 		print "\e[1;36m>> Creating package\e[0m"
 		if [[ -n $PACKAGER ]]; then
 			PACKAGER="$PACKAGER" makepkg
@@ -178,7 +179,7 @@ function cleanbuild {
 		esac
 	done
 	else
-		print "The directories src/ & pkg/ are missing!"
+		print -u2 "The directories src/ & pkg/ are missing!"
 	fi
 }
 
@@ -188,18 +189,17 @@ function edit {
 		"$EDITOR" PKGBUILD
 		print "PKGBUILD edit finished."
 	else
-		print '$EDITOR is not defined'
+		print -u2 '$EDITOR is not defined'
 		exit 1
 	fi
 }
 
 function upload {
-	set -x
 	checkvar
 	PKGF="$(find $PWD -follow -maxdepth 1 -type f -iname "*.pkg.tar.xz")"
 	TARB="$(find $PWD -follow -maxdepth 1 -type f -iname "*.src.tar.gz")"
 	if [[ -z $PKGF && -z $TARB ]]; then
-		print "Nothing to upload!"
+		print -u2 "Nothing to upload!"
 		exit 1
 	fi
 	print "\e[0;33m>> The following packages will be uploaded:\e[0m"
@@ -209,12 +209,14 @@ function upload {
 	print "\e[1;36m>> Uploading packages in 5 seconds...\e[0m"
 	sleep 5
 
-	curl --progress-bar ${CMDAR:+"$CMDAR"} -u ${USERF}:${PASSF} -T "{${PKGF:+"$PKGF"}${TARB:+,"$TARB"}}" "$FTPURL"
+	# If curl >= 7.32, the command "curl --progress-bar doesn't work. The upload is too fast."
+	#curl --progress-bar ${CMDAR:+"$CMDAR"} -u ${USERF}:${PASSF} -T "{${PKGF:+"$PKGF"}${TARB:+,"$TARB"}}" "$FTPURL"
+	curl -Ss ${CMDAR:+"$CMDAR"} -u ${USERF}:${PASSF} -T "{${PKGF:+"$PKGF"}${TARB:+,"$TARB"}}" "$FTPURL"
 	RET="$?"
-	if (( $RET == 0 )); then
+	if (( RET == 0 )); then
 		print "\e[0;32m>> Upload successful!\e[0m"
 	else
-		print "\e[0;31mError during upload: Errno $RET\e[0m"
+		print -u2 "\e[0;31mError during upload: Errno $RET\e[0m"
 	fi
 }
 
@@ -272,16 +274,16 @@ while getopts ":bcdehptuvV" opt; do
 	esac
 done
 
-if (( $CLEAN != 0 )); then
+if (( CLEAN != 0 )); then
 	cleanbuild
 fi
 
-if (( $COMPILE != 0 )); then
+if (( COMPILE != 0 )); then
 	checkconf
 	build
 fi
 
-if (( $UPLFTP != 0 )); then
+if (( UPLFTP != 0 )); then
 	upload
 fi
 
