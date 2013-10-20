@@ -23,10 +23,10 @@
 #
 
 #set -x
-#GNU stat isn't POSIX. awk is enough powerful.
-#CHKFILE="$(ls -l $FILOC | awk '{k=0;for(i=0;i<=8;i++)k+=((substr($1,i+2,1)~/[rwx]/)*2^(8-i));if(k)printf("%0o\n",k)}')"
 
 SOFT="${0##*/}"
+FOLD="${XDG_CONFIG_HOME:-$HOME/.config}"
+FOLCF="${FOLD}/afuryc.conf"
 COMPILE=1
 UPLFTP=1
 CLEAN=0
@@ -53,22 +53,15 @@ function usage {
 function version {
 	cat <<- EOF
 	         __                       
-	   __ _ / _|_   _ _ __ _   _  ___ 
+	   ____ / _|_   _ _ __ _   _  ___ 
 	  / _  | |_| | | | '__| | | |/ __|   $SOFT: Upload your packages to Archlinux.fr FTP.
 	 | (_| |  _| |_| | |  | |_| | (__    This program is under GNU General Public License version 2
 	  \__,_|_|  \__,_|_|   \__, |\___|
 	                       |___/
-	
 	EOF
 }
 
 function filechk {
-	if [[ -n $XDG_CONFIG_HOME ]]; then
-		FOLCF="$XDG_CONFIG_HOME/afuryc.conf"
-	else
-		FOLCF="$HOME/.config/afuryc.conf"
-	fi
-
 	if [[ ! -r $HOME/.afuryc.conf && ! -r $FOLCF ]]; then
 		print -u2 "Config file not found."
 		print -u2 "You should create a config file similar to afuryc.conf.example"
@@ -90,9 +83,9 @@ function checkconf {
 		CONFGS="$FOLCF"
 	fi
 
-	#Tiny hack
-	CHKFILE=$(stat -c "%a" $CONFGS)
-	if (( CHKFILE != 600 )); then
+	#Tiny portable hack 
+	CHKFILE=$(find ${CONFGS%/*} -type f ! -perm 600 -iname "afuryc.conf")
+	if [[ -n $CHKFILE ]]; then
 		print "\e[0;31mWARNING: You should change ${CONFGS##*/} permissions to 600!\e[0m"
 	fi
 }
@@ -209,8 +202,8 @@ function upload {
 	print "\e[1;36m>> Uploading packages in 5 seconds...\e[0m"
 	sleep 5
 
-	# If curl >= 7.32, the command "curl --progress-bar doesn't work. The upload is too fast."
-	#curl --progress-bar ${CMDAR:+"$CMDAR"} -u ${USERF}:${PASSF} -T "{${PKGF:+"$PKGF"}${TARB:+,"$TARB"}}" "$FTPURL"
+	# If curl >= 7.32, the command "curl --progress-bar doesn't work. The upload is too fast, the bar isn't displayed."
+	# curl --progress-bar ${CMDAR:+"$CMDAR"} -u ${USERF}:${PASSF} -T "{${PKGF:+"$PKGF"}${TARB:+,"$TARB"}}" "$FTPURL"
 	curl -Ss ${CMDAR:+"$CMDAR"} -u ${USERF}:${PASSF} -T "{${PKGF:+"$PKGF"}${TARB:+,"$TARB"}}" "$FTPURL"
 	RET="$?"
 	if (( RET == 0 )); then
